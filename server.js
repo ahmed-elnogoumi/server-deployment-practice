@@ -1,29 +1,26 @@
-// what are entry points for, importing your programs "module" and invoking them.
-
-const addition = require('./lib/addition.js'); // require -> built in Node function. Loads dependencies from other modules / files.
-
-console.log("TESTING...", addition(2, 3));
-
-
-// Express!!!!
-require('dotenv').config();
 const express = require('express');
+const logger = require('./middleware/logger');
+const validator = require('./middleware/validator');
+const notFoundHandler = require('./error-handlers/404');
+const errorHandler = require('./error-handlers/500');
 
 const app = express();
 
-// add server functionality
-app.get('/addition', (request, response) => {
-  try { 
-    let { number1, number2 } = request.query;
-    let sum = addition(parseInt(number1), parseInt(number2));
-    response.status(200).json({value: sum});
-  } catch(e) {
-    response.status(400).send('I need some numbers :(');
-  }
+app.use(logger);
+
+app.get('/person', validator, (req, res) => {
+  const name = req.query.name;
+  res.json({ name });
 });
 
-// app.listen(PORT, () => {
-//   console.log('App is listening');
-// });
+app.use('*', notFoundHandler);
+app.use(errorHandler);
 
-module.exports = app;
+module.exports = {
+  app,
+  start: (port) => {
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  },
+};
